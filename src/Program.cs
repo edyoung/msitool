@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -23,10 +24,11 @@ public class MsiTool
         [Option('d', "directory", Required = false, HelpText = "Destination directory")]
         public string Destination { get; set; } = ".";
 
-        [Option('f', "files", Required = false, HelpText = "Files to extract, omit to get all files")]
+        [Value(0, Required =false)]
         public IEnumerable<string> Files { get; set; } = [];
     }
 
+    
     [Verb("insert", HelpText = "Insert binaries into an MSI's binary table")]
     public class InsertOptions
     {
@@ -41,11 +43,12 @@ public class MsiTool
         [Option('d', "directory", Required = false, HelpText = "Source directory")]
         public string Destination { get; set; } = ".";
 
-        [Option('f', "files", Required = true, HelpText = "Files to insert")]
+        [Value(0)]
         public IEnumerable<string> Files { get; set; } = [];
     }
 
-
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(ExtractOptions))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(InsertOptions))]
     public static int Main(string[] args)
     {
         try
