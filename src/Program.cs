@@ -48,9 +48,17 @@ public class MsiTool
 
     public static int Main(string[] args)
     {
-        return CommandLine
-            .Parser.Default.ParseArguments<ExtractOptions,InsertOptions>(args)
-            .MapResult((ExtractOptions opts) => Extract(opts), (InsertOptions opts) => Insert(opts), errs => 1);
+        try
+        {
+            return CommandLine
+                .Parser.Default.ParseArguments<ExtractOptions, InsertOptions>(args)
+                .MapResult((ExtractOptions opts) => Extract(opts), (InsertOptions opts) => Insert(opts), errs => 1);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error: {ex.Message}");
+            return 1;
+        }
     }
 
     public static int Extract(ExtractOptions opts)
@@ -61,6 +69,8 @@ public class MsiTool
         bool getall = binaries.Count() == 0;
 
         Console.Error.WriteLine($"Extracting binaries from {msi} into {dir}");
+        int records = 0;
+        int extracted = 0;
 
         var dbHandle = Interop.OpenDatabase(msi, DatabaseOpenMode.ReadOnly);
         try
@@ -77,6 +87,8 @@ public class MsiTool
                 {
                     break;
                 }
+
+                records++;
                 var name = NativeMethods.GetString(recordHandle, 1);
                 var size = NativeMethods.MsiRecordGetInteger(recordHandle, 2);
                 if (getall || binaries.Contains(name))
@@ -88,6 +100,7 @@ public class MsiTool
 
                     File.WriteAllBytes(outFile, bytes);
                     Console.Error.WriteLine($"Binary {name} size {size}: Saved to {outFile}");
+                    extracted++;
                 }
                 else
                 {
@@ -100,6 +113,7 @@ public class MsiTool
             NativeMethods.MsiCloseHandle(dbHandle);
         }
 
+        Console.Error.WriteLine($"Extracted {extracted} of {records} binaries");
         return 0;
     }
 

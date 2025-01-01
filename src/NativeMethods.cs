@@ -1,37 +1,40 @@
 ﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
 // Helper methods to wrap MSI API calls.
 public static class Interop
 {
+    public static void ThrowIfError(int error, [CallerMemberName]string operation="")
+    {
+        if (error != 0)
+        {
+            throw new Exception($"{operation} {error}: {Win32ErrorHelper.GetErrorMessage(error)}");
+        }
+    }
+
     public static IntPtr OpenDatabase(string databasePath, DatabaseOpenMode persist)
     {
         int result = NativeMethods.MsiOpenDatabase(databasePath, (IntPtr)(persist), out IntPtr handle);
-        if (result != 0)
-        {
-            throw new Exception($"OpenDatabase: MsiError {result}");
-        }
+        ThrowIfError(result);
+        
         return handle;
     }
 
     public static IntPtr DatabaseOpenView(IntPtr dbHandle, string query)
     {
         int result = NativeMethods.MsiDatabaseOpenView(dbHandle, query, out IntPtr viewHandle);
-        if (result != 0)
-        {
-            throw new Exception($"DatabaseOpenView: MsiError {result}");
-        }
+        ThrowIfError(result);
+
         return viewHandle;
     }
 
     public static void ViewExecute(IntPtr viewHandle, IntPtr recordHandle)
     {
         int result = NativeMethods.MsiViewExecute(viewHandle, recordHandle);
-        if (result != 0)
-        {
-            throw new Exception($"ViewExecute: MsiError {result}");
-        }
+        ThrowIfError(result);
+
     }
 
     public static IntPtr ViewFetch(IntPtr viewHandle)
@@ -42,29 +45,20 @@ public static class Interop
             // no more data
             return IntPtr.Zero;
         }
-        if (result != 0)
-        {
-            throw new Exception($"ViewExecute: MsiError {result}");
-        }
+        ThrowIfError(result);
         return recordHandle;
     }
 
     public static void RecordSetStream(IntPtr record, int field, string filePath)
     {
         int result = NativeMethods.MsiRecordSetStream(record, field, filePath);
-        if (result != 0)
-        {
-            throw new Exception($"SetStream: MsiError {result}");
-        }
+        ThrowIfError(result);
     }
 
     public static void DatabaseCommit(IntPtr dbHandle)
     {
         int result = NativeMethods.MsiDatabaseCommit(dbHandle);
-        if (result != 0)
-        {
-            throw new Exception($"Commit: MsiError {result}");
-        }
+        ThrowIfError(result);
     }
 }
 
